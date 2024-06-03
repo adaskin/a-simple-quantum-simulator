@@ -1,6 +1,6 @@
-# a-simple-quantum-simulator
+# a simple quantum circuit simulator
 ## ``qusim.py`` 
-includes a simple quantum simulator that applies a given gate to a quantum state.
+includes a simple quantum circuit simulator that applies a given gate to a quantum state.
 
 - The qubit index order: ``|0, 1, ..n>``
 
