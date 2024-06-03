@@ -136,4 +136,4 @@ if __name__ == "__main__":
     psi = rng.normal(size=(N,1))
     psi = psi/np.linalg.norm(psi)
     psi = parameterized_qc(psi, nqubit, nlevel=1, thetasByLevels=None)
-    qporbs = prob_of_a_qubit(psi,3)
+    qprobs = prob_of_a_qubit(psi,3)
