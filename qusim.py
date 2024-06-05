@@ -62,7 +62,7 @@ def prob_of_qubits(psi, qubits):
             if jbits[qubits[q]] == "1":
                 ind += 2**(lenq - q-1)
 
-        f[ind] += np.real(np.abs(psi[j][0])**2)
+        f[ind] += np.real(np.abs(psi[j])**2)
     return f
 
 
@@ -73,7 +73,7 @@ def prob_of_a_qubit(psi, qubit):
     computes probabilities in a quantum state for a given qubit.
     Parameters
     ----------
-    psi: numpy 1 dimensional column vector
+    psi: numpy 1 dimensional row vector
         representing a quantum state
     qubit:  int
         an integer number
@@ -96,7 +96,7 @@ def prob_of_a_qubit(psi, qubit):
         qbitval = (j >> qshift) & 1
         
         #print(qbitval,qbitval1)
-        f[qbitval] += np.real(np.abs(psi[j][0])**2)
+        f[qbitval] += np.real(np.abs(psi[j])**2)
     return f
 
 
@@ -121,7 +121,7 @@ def apply_gate_to_state(psi, Gate, target, control_qubits=[]):
     qubit orders |0, 1, 2..n>
     Parameters
     ----------
-    psi: one dimensional column vector 
+    psi: one dimensional row vector 
         a quantum state
     Gate: 2x2 numpy ndarray
         A quantum gate
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     level = 16
     N = 2**nqubit
     rng = np.random.default_rng()
-    psi = rng.normal(size=(N,1))
+    psi = rng.normal(size=(N))
     psi = psi/np.linalg.norm(psi)
     gate = ry(rng.normal())
     psi1 = apply_gate_to_state(psi, gate, 3, [0, 1,2])
