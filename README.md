@@ -1,4 +1,4 @@
-# a simple quantum circuit simulator
+# a simple quantum circuit simulator and its multiprocess version
 ## ``qusim.py`` 
 includes a simple quantum circuit simulator that applies a given gate to a quantum state.
 
@@ -30,3 +30,7 @@ e.g.
 ```
 psi = parameterized_qc(psi, nqubit, nlevel=1, thetasByLevels=None)
 ```
+
+## ``qusimmultiprocwithshm.py``
+multiprocess implementation of qusim on shared memory. The functions are the same as ``qusim.py`` and it can be used as ``qusim.py``.
+Note that this is not exactly optimized. It may include a few bugs. 
