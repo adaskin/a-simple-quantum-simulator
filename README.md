@@ -31,6 +31,6 @@ e.g.
 psi = parameterized_qc(psi, nqubit, nlevel=1, thetasByLevels=None)
 ```
 
-## ``qusimmp.py`` Multiprocess implementation
+## ``qusimmp.py`` Multiprocess/multithread implementation
 multiprocess implementation of qusim on shared memory. The functions are the same as ``qusim.py`` and it can be used as ``qusim.py``.
 Note that this is not completely optimized. It may include a few bugs. 
