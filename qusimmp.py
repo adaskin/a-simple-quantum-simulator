@@ -323,23 +323,24 @@ def worker_apply_gate_to_state(psi_shared,
             indx0 = j
     
             #print(indx0, indx1, bin(indx0)[2:].zfill(nqubit), bin(indx1)[2:].zfill(nqubit))
-            psi0 = Gate[0][0]*psi[indx0] + Gate[0][1]*psi[indx1]
-            psi1 = Gate[1][0]*psi[indx0] + Gate[1][1]*psi[indx1]
+            psi0 = Gate[0][0]*psi_shared[indx0] + Gate[0][1]*psi_shared[indx1]
+            psi1 = Gate[1][0]*psi_shared[indx0] + Gate[1][1]*psi_shared[indx1]
             changed0states.append([indx0,psi0])
             changed1states.append([indx1,psi1])
 
-    
-    lock.acquire()
+    #!!!!lock is not be necessary 
+    #since they are all working on different parts
+    #lock.acquire()
     try:
         for i in range(len(changed0states)):
             [indx,val] = changed0states[i]
             psi_shared[indx] = val
     except:
         print("exception occured while getting lock")
-    finally:
-        lock.release() 
+    #finally:
+    #    lock.release() 
         
-    lock.acquire()
+    #lock.acquire()
     try:       
         #this does not obey locality: the indices jump over array    
         for i in range(len(changed1states)):
@@ -347,8 +348,8 @@ def worker_apply_gate_to_state(psi_shared,
             psi_shared[indx] = val
     except:
         print("exception occured while getting lock")
-    finally:
-        lock.release() 
+    #finally:
+    #    lock.release() 
     return changed0states,changed1states
 
 def apply_gate_to_state(psi_shared, Gate, target, control_qubits=[]):
@@ -467,7 +468,10 @@ if __name__ == "__main__":
     import cProfile
     pr = cProfile.Profile()
     pr.enable()
-    nqubit = 20  # number of qubits
+    # number of qubits
+    #For speed up use >20
+    nqubit = 20  
+
 
     N = 2**nqubit
     rng = np.random.default_rng()
