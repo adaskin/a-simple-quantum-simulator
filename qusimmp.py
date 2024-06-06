@@ -37,8 +37,7 @@ import threading
 from threading import Thread 
 import concurrent.futures
 import multiprocessing as mp
-import psutil
-MAX_THREADS = psutil.cpu_count(logical = True)
+MAX_THREADS = mp.cpu_count()
 #################################################################
 def prob_of_a_qubit_serial(psi, qubit):
     """
@@ -146,6 +145,7 @@ def prob_of_a_qubit(psi, qubit):
     
     for p in processes:
         p.join()
+        p.close()
 
 
        
@@ -234,6 +234,7 @@ def prob_of_qubits(psi, qubits):
     
     for p in processes:
         p.join()
+        p.close()
     
     return fshared
 
@@ -293,14 +294,14 @@ def worker_apply_gate_to_state(psi_shared,
                                start, end, 
                                Gate, target, cqsorted, 
                                nqubit, qshift, 
-                               lock ):
+                               lock=None ):
     '''computes prob in range psi[start:end] and psi[where target is 1]
     for qubit binary-masked by qshift
     psi_shared is a shared memory
     '''
-    #memcpy to not affect psi0, psi1 computations 
-    changed0states = []#target is 0: these are unique between processes
-    changed1states = []#target is 1: these are unique between processes
+    # #memcpy to not affect psi0, psi1 computations 
+    # changed0states = []#target is 0: these are unique between processes
+    # changed1states = []#target is 1: these are unique between processes
         
     
     
@@ -322,35 +323,16 @@ def worker_apply_gate_to_state(psi_shared,
             indx1 = (1<<(qshift)) | j #when target bit 1
             indx0 = j
     
-            #print(indx0, indx1, bin(indx0)[2:].zfill(nqubit), bin(indx1)[2:].zfill(nqubit))
+            #no lock needed since indx0 indx1 are uniques
             psi0 = Gate[0][0]*psi_shared[indx0] + Gate[0][1]*psi_shared[indx1]
             psi1 = Gate[1][0]*psi_shared[indx0] + Gate[1][1]*psi_shared[indx1]
-            changed0states.append([indx0,psi0])
-            changed1states.append([indx1,psi1])
+            psi_shared[indx0] = psi0
+            psi_shared[indx1] = psi1
+            #changed0states.append([indx0,psi0])
+            #changed1states.append([indx1,psi1])
 
-    #!!!!lock is not be necessary 
-    #since they are all working on different parts
-    #lock.acquire()
-    try:
-        for i in range(len(changed0states)):
-            [indx,val] = changed0states[i]
-            psi_shared[indx] = val
-    except:
-        print("exception occured while getting lock")
-    #finally:
-    #    lock.release() 
-        
-    #lock.acquire()
-    try:       
-        #this does not obey locality: the indices jump over array    
-        for i in range(len(changed1states)):
-            [indx,val] = changed1states[i]
-            psi_shared[indx] = val
-    except:
-        print("exception occured while getting lock")
-    #finally:
-    #    lock.release() 
-    return changed0states,changed1states
+
+    return #changed0states,changed1states
 
 def apply_gate_to_state(psi_shared, Gate, target, control_qubits=[]):
     '''
@@ -410,6 +392,7 @@ def apply_gate_to_state(psi_shared, Gate, target, control_qubits=[]):
 
     for p in processes:
         p.join()
+        p.close()
    
     return psi_shared
 
@@ -465,14 +448,12 @@ def apply_gate_to_state_serial(psi, Gate, target, control_qubits=[]):
 
 
 if __name__ == "__main__":
+    from timeit import default_timer as timer
     import cProfile
     pr = cProfile.Profile()
     pr.enable()
-    # number of qubits
-    #For speed up use >20
-    nqubit = 20  
-
-
+    nqubit = 20  # number of qubits
+    COMPARE_WITH_SERIAL = True #to run serial or not
     N = 2**nqubit
     rng = np.random.default_rng()
    
@@ -482,39 +463,42 @@ if __name__ == "__main__":
     psi = mp.Array(ctypes.c_double, N, lock=False) # shared
     
     #psi = np.frombuffer(buffer,dtype=ctypes.c_double, count=N)
-    #psi = np.lib.stride_tricks.as_strided(psi, shape=(N,1))
-    test_data = rng.normal(size=(N))
-    psi[:] = test_data[:]
-    psi[:] = psi/np.linalg.norm(psi)
+    if COMPARE_WITH_SERIAL == True:
+        test_data = rng.normal(size=(N))
+        test_data = test_data/np.linalg.norm(test_data)   
+        psi[:] = test_data[:]
+    else:
+        psi[:] = rng.normal(size=(N))
+        psi[:] = psi/np.linalg.norm(psi)
 
 
     gate = ry(rng.normal())
-    
+    ##############################################
     #To test serial vs mp 
-    from timeit import default_timer as timer
-    start=timer()
-    initial_qprobs = prob_of_a_qubit_serial(psi,3)
-    psi1 = apply_gate_to_state_serial(psi, gate, 3, [0, 1,2])
+    if COMPARE_WITH_SERIAL == True:
+        start=timer()
+        initial_qprobs = prob_of_a_qubit_serial(psi,3)
+        psi1 = apply_gate_to_state_serial(psi, gate, 3, [0, 1,2])
+        
+        final_qprobs = prob_of_a_qubit_serial(psi1,3)
+        
+        qp0 = prob_of_qubits_serial(psi,[0,3])
+        qp1 = prob_of_qubits_serial(psi1,[0,3])
+        end=timer()
+       
+        # for i in range(len(psi)):
+        #      print(psi[i], psi1[i])
+        print("Applied gate:\n", gate)
+        print("init prob of 4th qubit:", initial_qprobs)
+        print("final prob of 4th qubit:", final_qprobs)
     
-    final_qprobs = prob_of_a_qubit_serial(psi1,3)
     
-    qp0 = prob_of_qubits_serial(psi,[0,3])
-    qp1 = prob_of_qubits_serial(psi1,[0,3])
-    end=timer()
-   
-    # for i in range(len(psi)):
-    #      print(psi[i], psi1[i])
-    print("Applied gate:\n", gate)
-    print("init prob of 4th qubit:", initial_qprobs)
-    print("final prob of 4th qubit:", final_qprobs)
-
-
-    print("init prob of 1st and 4th qubit:", qp0)
-    print("final prob of 1st and 4th qubit:",qp1)
-
-    psi[:] = test_data[:]
-    psi[:] = psi/np.linalg.norm(psi)
-    
+        print("init prob of 1st and 4th qubit:", qp0)
+        print("final prob of 1st and 4th qubit:",qp1)
+        print("serial-time:", end - start) 
+        psi[:] = test_data[:]
+        
+    #######################################
     start2=timer()
     initial_qprobs = prob_of_a_qubit(psi,3)
     qp0 = prob_of_qubits(psi,[0,3])
@@ -530,12 +514,10 @@ if __name__ == "__main__":
     print("Applied gate:\n", gate)
     print("init prob of 4th qubit:", initial_qprobs[:])
     print("final prob of 4th qubit:", final_qprobs[:])
-    
      
     print("init prob of 1st and 4th qubit:", qp0[:])
     print("final prob of 1st and 4th qubit:",qp1[:])
     
-    print("serial-time:", end - start) 
     print("mp-time:", end2 - start2) 
     pr.disable()
     #pr.print_stats()
