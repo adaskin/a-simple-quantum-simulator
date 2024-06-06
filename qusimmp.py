@@ -38,7 +38,7 @@ from threading import Thread
 import concurrent.futures
 import multiprocessing as mp
 
-MAX_THREADS = multiprocessing.cpu_count()
+MAX_THREADS = mp.cpu_count()
 #################################################################
 def prob_of_a_qubit_serial(psi, qubit):
     """
