@@ -37,7 +37,7 @@ def prob_of_qubits(psi, qubits):
     computes probabilities for the states of a given qubit list.
     Parameters
     ----------
-    psi: numpy 1 dimensional column vector
+    psi: numpy 1 dimensional row vector
         representing a quantum state
     qubits:  list
         the set of qubits such as [0 3 5]
