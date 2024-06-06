@@ -30,7 +30,7 @@ Created on Mon  Jun 5 11:04:08 2024
 
 @author: adaskin
 """
-MAX_THREADS = 50
+
 import ctypes
 import numpy as np
 import threading
@@ -38,6 +38,7 @@ from threading import Thread
 import concurrent.futures
 import multiprocessing as mp
 
+MAX_THREADS = multiprocessing.cpu_count()
 #################################################################
 def prob_of_a_qubit_serial(psi, qubit):
     """
